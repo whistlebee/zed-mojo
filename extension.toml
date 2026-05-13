@@ -7,8 +7,8 @@ description = "Mojo language support for Zed powered by tree-sitter-mojo."
 repository = "https://github.com/whistlebee/zed-mojo"
 
 [grammars.mojo]
-repository = "file:///Users/hjk/projects/mojo-tools/mojo-tree-sitter"
-rev = "HEAD"
+repository = "https://github.com/whistlebee/mojo-tree-sitter"
+rev = "79b7c9ceb1481ba4a8fa7ad88973497a456b83d5"
 
 [language_servers.mojo-lsp-server]
 name = "Mojo Language Server"
