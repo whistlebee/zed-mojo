@@ -1,0 +1,57 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "program": {
+            "type": "string",
+            "description": "Path to the precompiled program to debug."
+        },
+        "mojoFile": {
+            "type": "string",
+            "description": "Path to the mojo file to JIT compile and debug."
+        },
+        "args": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Program arguments.",
+            "default": []
+        },
+        "buildArgs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Build arguments when using `mojoFile` instead of `program`.",
+            "default": []
+        },
+        "cwd": {
+            "type": "string",
+            "description": "Program working directory."
+        },
+        "env": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Additional environment variables to set when launching the program."
+        },
+        "request": {
+            "type": "string",
+            "enum": ["launch", "attach"],
+            "description": "Request type: launch or attach."
+        },
+        "initCommands": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Initialization commands executed upon debugger startup.",
+            "default": []
+        },
+        "runInTerminal": {
+            "type": "boolean",
+            "description": "Launch the program inside a terminal.",
+            "default": false
+        },
+        "stopOnEntry": {
+            "type": "boolean",
+            "description": "Automatically stop after launch.",
+            "default": false
+        }
+    },
+    "additionalProperties": true
+}
