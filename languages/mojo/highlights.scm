@@ -316,6 +316,8 @@
 (comptime_declaration
   "comptime" @keyword)
 
+(comptime_modifier) @keyword
+
 (ref_binding
   "ref" @keyword)
 
