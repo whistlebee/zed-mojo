@@ -243,15 +243,6 @@
     (soft_keyword_identifier) @variable
   ])
 
-(lambda_parameters
-  [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(keyword_argument
-  name: (identifier) @label)
-
 (aliased_import
   alias: (identifier) @label)
 
@@ -323,9 +314,6 @@
 
 (await
   "await" @keyword)
-
-(lambda
-  "lambda" @keyword)
 
 (aliased_import
   "as" @keyword)
