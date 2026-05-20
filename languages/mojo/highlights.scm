@@ -264,8 +264,8 @@
     (soft_keyword_identifier) @variable
   ])
 
-(ref_binding
-  name: [
+(ref_pattern
+  pattern: [
     (identifier) @variable
     (soft_keyword_identifier) @variable
   ])
@@ -309,7 +309,7 @@
 
 (comptime_modifier) @keyword
 
-(ref_binding
+(ref_pattern
   "ref" @keyword)
 
 (await
