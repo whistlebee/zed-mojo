@@ -347,6 +347,8 @@
   "yield"
   "raise"
   "assert"
+  "__comptime_assert"
+  "where"
 ] @keyword.control
 
 (pass_statement) @keyword.control

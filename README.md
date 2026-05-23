@@ -1,30 +1,27 @@
 # zed-mojo
 
-grug like zed editor. zed fast. grug like mojo language. mojo fast. grug want mojo in zed. so grug make extension.
+A Zed extension for the Mojo programming language.
 
-this extension give zed two things:
-1. shiny colors. uses `tree-sitter-mojo` grug made.
-2. smart brain. talks to `mojo-lsp-server` so zed know what code mean.
+## Features
 
-## how install
+- **v1.0.0b1 syntax support** - full grammar coverage from `comptime` to ownership keywords and more, powered by [`tree-sitter-mojo`](https://github.com/whistlebee/mojo-tree-sitter)
+- **Debugger support** - launch, set breakpoints, step through via `mojo-lldb` adapter
+- **Proper indents & folding** - code folds smartly, indent guides follow the language structure
+- **Language server integration** - diagnostics, go-to-definition, hover, completions via `mojo-lsp-server`
 
-grug not put in big zed extension store yet. must install by hand.
+## Installation
 
-clone this repo. 
+This extension is not yet published in the Zed extension store. To install it manually:
 
-open zed. press buttons for command palette. type `zed: install dev extension`. pick folder where you put this code
+Clone this repository, then open Zed, open the command palette, select `zed: install dev extension`, and pick the folder containing this code.
 
-## language server brain
+## Language Server
 
-extension look for `mojo-lsp-server` to be smart. 
+The extension looks for `mojo-lsp-server` in `PATH` and in the project's `.pixi` directory. If the server is not found, an error message will prompt you to install Mojo.
 
-it look in `PATH`. it look in project `.pixi` folder. if extension cannot find server, it cry and tell you to install mojo.
+## Debugging
 
-## debug bugs
-
-code have bugs. grug write bugs all time. debugger help smash bugs.
-
-to tell zed how to debug mojo, grug make `.zed/debug.json` file in project folder. put this magic text inside:
+To configure debugging for a Mojo project, create a `.zed/debug.json` file in the project root with the following contents:
 
 ```json
 [
@@ -39,6 +36,4 @@ to tell zed how to debug mojo, grug make `.zed/debug.json` file in project folde
 ]
 ```
 
-now open `examples/debug_basic.mojo`. run `debugger: start` in zed. pick "Mojo: Debug basic example". set breakpoint. watch code step. fix bug.
-
-change filenames for your project.
+Open `examples/debug_basic.mojo`, run `debugger: start` in Zed, and select the "Mojo: Debug basic example" configuration. Set breakpoints and step through your code. Adjust the filename and arguments for your own project.
