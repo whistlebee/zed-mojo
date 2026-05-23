@@ -1,0 +1,10 @@
+[
+  {
+    "label": "Mojo: Debug basic example",
+    "adapter": "mojo-lldb",
+    "request": "launch",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "mojoFile": "$ZED_WORKTREE_ROOT/examples/debug_basic.mojo",
+    "args": []
+  }
+]
