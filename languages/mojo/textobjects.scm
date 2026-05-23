@@ -3,5 +3,8 @@
 (function_definition
   body: (_) @function.inside) @function.around
 
-(class_definition
+(struct_definition
+  body: (_) @class.inside) @class.around
+
+(trait_definition
   body: (_) @class.inside) @class.around

@@ -1,17 +1,32 @@
-(_ "[" "]" @end) @indent
-(_ "{" "}" @end) @indent
-(_ "(" ")" @end) @indent
+; Mojo indentation queries
+; Based on Python indentation with Mojo extensions
 
-(function_definition) @start.def
-(class_definition) @start.class
-(if_statement) @start.if
-(for_statement) @start.for
-(while_statement) @start.while
-(with_statement) @start.with
-(match_statement) @start.match
-(try_statement) @start.try
-(elif_clause) @start.elif
-(else_clause) @start.else
-(except_clause) @start.except
-(finally_clause) @start.finally
-(case_clause) @start.case
+[
+  (function_definition)
+  (struct_definition)
+  (if_statement)
+  (elif_clause)
+  (else_clause)
+  (for_statement)
+  (while_statement)
+  (try_statement)
+  (except_clause)
+  (finally_clause)
+  (with_statement)
+] @indent.begin
+
+[
+  ")"
+  "]"
+  "}"
+] @indent.branch
+
+[
+  (return_statement)
+  (break_statement)
+  (continue_statement)
+  (raise_statement)
+  (pass_statement)
+] @indent.dedent
+
+(comment) @indent.ignore

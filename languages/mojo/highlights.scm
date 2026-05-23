@@ -1,529 +1,273 @@
-(type
-  [
-    (identifier) @type
-    (soft_keyword_identifier) @type
-  ])
+; Catch-all for variables
+(identifier) @variable
 
-(type
-  (attribute
-    attribute: (identifier) @type))
+; Special backticked identifiers treated as string literals
+((identifier) @string.special
+  (#match? @string.special "^`.*`$"))
 
-(type
-  (subscript
-    value: [
-      (identifier) @type
-      (soft_keyword_identifier) @type
-    ]))
+; Special variables
+((identifier) @variable.special
+  (#match? @variable.special "^(self|Self)$"))
 
-(type
-  (subscript
-    value: (attribute
-      attribute: (identifier) @type)))
+; Properties (field access)
+(attribute
+  attribute: (identifier) @property)
 
-(type
-  [
-    (identifier) @type.builtin
-    (soft_keyword_identifier) @type.builtin
-  ]
-  (#match? @type.builtin "^(__mlir_attr|__mlir_op|__mlir_type|Bool|DType|Dict|Float16|Float32|Float64|Int|List|None|Optional|Pointer|SIMD|Set|String|Tuple|UnsafePointer|bool|dict|float|int|list|object|set|str|tuple|type)$"))
+; Highlight uppercase attribute names as types/constructors
+((attribute
+   attribute: (identifier) @type)
+  (#match? @type "^[A-Z]"))
 
-(meta_parameter
-  name: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
+; Highlight all-caps attribute names as constants (e.g. SWIZZLE_NONE)
+((attribute
+   attribute: (identifier) @constant)
+  (#match? @constant "^_*[A-Z][A-Z\\d_]*$"))
 
-(meta_parameter
-  type: (type
-    [
-      (identifier) @type.interface
-      (soft_keyword_identifier) @type.interface
-    ]))
-
-(class_definition
+; Type definitions
+(struct_definition
   name: (identifier) @type)
 
-(class_definition
-  keyword: "trait"
+(trait_definition
   name: (identifier) @type.interface)
 
-(class_definition
-  superclasses: (argument_list
-    [
-      (identifier) @type.interface
-      (attribute
-        attribute: (identifier) @type.interface)
-    ]))
+(extension_definition
+  name: (identifier) @type)
 
+; Generic/Compile-time type parameters (e.g. [T: Type])
+(meta_parameter
+  name: (identifier) @type)
+
+; Function definitions
 (function_definition
   name: (identifier) @function.definition)
 
-(function_definition
-  keyword: [
-    "def"
-    "fn"
-  ] @keyword)
-
-(function_type
-  keyword: [
-    "def"
-    "fn"
-  ] @keyword)
-
-(class_definition
-  keyword: [
-    "class"
-    "struct"
-    "trait"
-  ] @keyword)
-
-(decorator
-  "@" @punctuation.special)
-
-(decorator
-  (expression
-    [
-      (identifier) @attribute
-      (soft_keyword_identifier) @attribute
-    ]))
-
-(decorator
-  (expression
-    (attribute
-      attribute: (identifier) @attribute)))
-
-(decorator
-  (expression
-    (call
-      function: [
-        (identifier) @attribute
-        (soft_keyword_identifier) @attribute
-      ])))
-
-(decorator
-  (expression
-    (call
-      function: (attribute
-        attribute: (identifier) @attribute))))
-
+; Function calls
 (call
   function: [
     (identifier) @function
-    (soft_keyword_identifier) @function
+    (attribute
+      attribute: (identifier) @function.method)
   ])
-
-(call
-  function: (attribute
-    attribute: (identifier) @function))
 
 (call
   function: (subscript
     value: [
       (identifier) @function
-      (soft_keyword_identifier) @function
+      (attribute
+        attribute: (identifier) @function.method)
     ]))
 
-(call
-  function: (subscript
-    value: (attribute
-      attribute: (identifier) @function)))
+; Constructor/type instantiation calls starting with uppercase letters
+((call
+   function: (identifier) @type)
+  (#match? @type "^[A-Z]"))
 
-(binary_operator
-  left: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ]
-  (#match? @variable "^[a-z_][A-Za-z0-9_]*$"))
+((call
+   function: (subscript
+     value: (identifier) @type))
+  (#match? @type "^[A-Z]"))
 
-(binary_operator
-  right: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ]
-  (#match? @variable "^[a-z_][A-Za-z0-9_]*$"))
+((call
+   function: (attribute
+     attribute: (identifier) @type))
+  (#match? @type "^[A-Z]"))
 
-(boolean_operator
-  left: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ]
-  (#match? @variable "^[a-z_][A-Za-z0-9_]*$"))
+((call
+   function: (subscript
+     value: (attribute
+       attribute: (identifier) @type)))
+  (#match? @type "^[A-Z]"))
 
-(boolean_operator
-  right: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ]
-  (#match? @variable "^[a-z_][A-Za-z0-9_]*$"))
+; Identifier conventions
+; Assume uppercase names are types/enum-constructors
+((identifier) @type
+  (#match? @type "^[A-Z]"))
 
-(comparison_operator
-  [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ]
-  (#match? @variable "^[a-z_][A-Za-z0-9_]*$"))
+; Assume all-caps names are constants
+((identifier) @constant
+  (#match? @constant "^_*[A-Z][A-Z\\d_]*$"))
 
-(return_statement
-  [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(expression_list
-  [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(transfer_expression
-  value: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(await
-  [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(attribute
-  object: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ]
-  (#match? @variable "^[a-z_][A-Za-z0-9_]*$"))
-
-(call
-  function: (subscript
-    value: [
-      (identifier)
-      (soft_keyword_identifier)
-    ]
-    subscript: [
-      (identifier) @variable
-      (soft_keyword_identifier) @variable
-    ]))
-
-(call
-  function: (subscript
-    value: (attribute
-      attribute: (identifier) @function)))
-
-(call
-  function: (subscript
-    value: (attribute
-      attribute: (identifier) @function)
-    subscript: [
-      (identifier) @variable
-      (soft_keyword_identifier) @variable
-    ]))
-
-(typed_parameter
-  name: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(convention_parameter
-  name: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(default_parameter
-  name: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(typed_default_parameter
-  name: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(aliased_import
-  alias: (identifier) @label)
-
-(assignment
-  left: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(assignment
-  right: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(augmented_assignment
-  left: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(ref_pattern
-  pattern: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(comptime_declaration
-  name: [
-    (identifier) @variable
-    (soft_keyword_identifier) @variable
-  ])
-
-(call
-  arguments: (argument_list
-    [
-      (identifier) @variable
-      (soft_keyword_identifier) @variable
-    ]))
-
-((identifier) @variable.special
-  (#eq? @variable.special "self"))
-
-((identifier) @variable.special
-  (#eq? @variable.special "cls"))
-
-((soft_keyword_identifier) @variable.special
-  (#eq? @variable.special "self"))
-
-((soft_keyword_identifier) @variable.special
-  (#eq? @variable.special "cls"))
-
-(import_statement
-  "import" @keyword)
-
-(import_from_statement
-  [
-    "from"
-    "import"
-  ] @keyword)
-
-(comptime_declaration
-  "comptime" @keyword)
-
-(comptime_modifier) @keyword
-
-(ref_pattern
-  "ref" @keyword)
-
-(await
-  "await" @keyword)
-
-(aliased_import
-  "as" @keyword)
-
-(as_pattern
-  "as" @keyword)
-
-(type_alias_statement
-  "type" @keyword)
-
+; Brackets
 [
+  "("
+  ")"
+  "{"
+  "}"
+  "["
+  "]"
+] @punctuation.bracket
+
+; Delimiters
+[
+  "."
+  ";"
+  ","
+  ":"
+] @punctuation.delimiter
+
+; Decorators (highlighted like Rust's attributes)
+"@" @punctuation.special
+
+(decorator
+  (identifier) @attribute)
+
+(decorator
+  (call
+    function: (identifier) @attribute))
+
+; Keywords
+[
+  "as"
   "async"
-  "raises"
-  "capturing"
-  "thin"
+  "comptime"
+  "def"
+  "fn"
+  "import"
+  "from"
+  "struct"
+  "trait"
+  "type"
+  "var"
+  "ref"
+  "where"
+  "read"
+  "mut"
+  "out"
+  "deinit"
+  "__extension"
 ] @keyword
 
+; Control flow keywords
 [
-  "if"
-  "elif"
+  "await"
   "else"
-  "for"
+  "elif"
+  "if"
+  "in"
+  "return"
+  "with"
   "while"
+  "for"
   "try"
   "except"
   "finally"
-  "with"
-  "match"
-  "case"
-  "return"
-  "yield"
   "raise"
   "assert"
   "__comptime_assert"
-  "where"
 ] @keyword.control
 
-(pass_statement) @keyword.control
 (break_statement) @keyword.control
 (continue_statement) @keyword.control
+(pass_statement) @keyword.control
 
+; Word operators
 [
   "and"
   "or"
   "not"
-  "in"
   "is"
-  "is not"
-  "not in"
-] @keyword.control
+] @keyword.operator
 
-(assignment
-  "var" @keyword)
+; Literals
+[
+  (string)
+  (concatenated_string)
+] @string
 
-(abi_effect
-  "abi" @keyword)
-
-(capture_default) @keyword
-(capture_convention) @keyword
-
-(argument_convention
-  [
-    "read"
-    "mut"
-    "var"
-    "out"
-    "deinit"
-    "ref"
-  ] @keyword)
-
-(true) @boolean
-(false) @boolean
-(none) @constant.builtin
-(ellipsis) @constant.builtin
+(escape_sequence) @string.escape
 
 [
   (integer)
   (float)
 ] @number
 
-(string) @string
-(string_start) @string
-(string_end) @string
-(escape_sequence) @string.escape
-(type_conversion) @string.escape
+(true) @boolean
+(false) @boolean
+(none) @constant
 
-(interpolation
-  [
-    "{"
-    "}"
-  ] @punctuation.special)
-
+; Comments
 (comment) @comment
 
-(binary_operator
-  operator: [
-    "+"
-    "-"
-    "*"
-    "/"
-    "//"
-    "%"
-    "**"
-    "<<"
-    ">>"
-    "&"
-    "|"
-    "@"
-    "^"
-  ] @operator)
+; Symbolic operators
+[
+  "+"
+  "-"
+  "*"
+  "/"
+  "//"
+  "%"
+  "**"
+  "|"
+  "&"
+  "^"
+  "<<"
+  ">>"
+  "@"
+  "+="
+  "-="
+  "*="
+  "/="
+  "//="
+  "%="
+  "**="
+  "<<="
+  ">>="
+  "&="
+  "|="
+  "^="
+  "@="
+  "=="
+  "!="
+  "<"
+  "<="
+  ">"
+  ">="
+  "<>"
+  "->"
+  ":="
+  "="
+] @operator
 
-(unary_operator
-  operator: [
-    "+"
-    "-"
-    "~"
-  ] @operator)
+(unary_operator) @operator
 
-(comparison_operator
-  operators: [
-    "=="
-    "!="
-    "<"
-    "<="
-    ">"
-    ">="
-    "<>"
-  ] @operator)
-
-(comparison_operator
-  operators: [
-    "in"
-    "not in"
-    "is"
-    "is not"
-  ] @keyword.control)
-
-(boolean_operator
-  operator: [
-    "and"
-    "or"
-  ] @keyword.control)
-
-(not_operator
-  "not" @keyword.control)
-
-(augmented_assignment
-  operator: [
-    "+="
-    "-="
-    "*="
-    "/="
-    "//="
-    "%="
-    "**="
-    "<<="
-    ">>="
-    "&="
-    "|="
-    "^="
-    "@="
-  ] @operator)
-
+; Ownership transfer operator
 (transfer_expression
   "^" @operator)
 
-(assignment
-  "=" @operator)
+; Parameters
+(typed_parameter
+  name: (identifier) @variable.parameter)
 
-(named_expression
-  ":=" @operator)
+(default_parameter
+  name: (identifier) @variable.parameter)
 
-(list_splat
-  "*" @operator)
+(typed_default_parameter
+  name: (identifier) @variable.parameter)
 
-(list_splat_pattern
-  "*" @operator)
+(convention_parameter
+  name: (identifier) @variable.parameter)
 
-(dictionary_splat
-  "**" @operator)
+(parameters
+  (identifier) @variable.parameter)
 
-(dictionary_splat_pattern
-  "**" @operator)
+; Function modifiers/effects
+(function_modifier
+  [
+    "raises"
+    "capturing"
+    "thin"
+    "register_passable"
+  ] @keyword)
 
-(splat_pattern
-  "*" @operator)
+(abi_effect
+  "abi" @keyword)
 
-(keyword_separator
-  "*" @operator)
+; Keyword / Label arguments
+(keyword_argument
+  name: [
+    (identifier)
+    (string)
+  ] @property)
 
-(positional_separator
-  "/" @operator)
-
-[
-  "("
-  ")"
-  "["
-  "]"
-  "{"
-  "}"
-] @punctuation.bracket
-
-[
-  "."
-  ","
-  ":"
-  ";"
-] @punctuation.delimiter
-
-[
-  "->"
-  "@"
-] @punctuation.special
+(argument_convention
+  (identifier) @label)

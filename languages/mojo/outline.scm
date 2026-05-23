@@ -1,11 +1,11 @@
 (decorator) @annotation
 
-(class_definition
-  keyword: [
-    "class"
-    "struct"
-    "trait"
-  ] @context
+(struct_definition
+  keyword: "struct" @context
+  name: (identifier) @name) @item
+
+(trait_definition
+  keyword: "trait" @context
   name: (identifier) @name) @item
 
 (function_definition
