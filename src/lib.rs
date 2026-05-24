@@ -212,6 +212,10 @@ impl MojoExtension {
                 "CONDA_PREFIX={}",
                 sdk.env_root
             )));
+            full_env.push(zed::serde_json::Value::String(format!(
+                "MOJO_SDK_PATH={}",
+                sdk.env_root
+            )));
         }
         full_env.extend(env);
 
@@ -338,12 +342,6 @@ impl MojoExtension {
 
         zed::serde_json::to_string(&json).map_err(|err| err.to_string())
     }
-
-    fn language_server_binary_path(&mut self, worktree: &zed::Worktree) -> zed::Result<String> {
-        self.sdk(worktree)
-            .map(|sdk| sdk.lsp_path.clone())
-            .map_err(Into::into)
-    }
 }
 
 impl zed::Extension for MojoExtension {
@@ -356,11 +354,31 @@ impl zed::Extension for MojoExtension {
         _language_server_id: &zed::LanguageServerId,
         worktree: &zed::Worktree,
     ) -> zed::Result<zed::Command> {
+        let sdk = self.sdk(worktree)?;
         let mut env = worktree.shell_env();
         env.push(("MODULAR_TELEMETRY_ENABLED".to_string(), "false".to_string()));
 
+        if !sdk.env_root.is_empty() {
+            let bin_dir = format!("{}/bin", sdk.env_root);
+            env.push(("CONDA_PREFIX".to_string(), sdk.env_root.clone()));
+            env.push(("MOJO_SDK_PATH".to_string(), sdk.env_root.clone()));
+
+            // Prepend bin_dir to PATH so the LSP server can invoke 'mojo' helper tools
+            let mut path_found = false;
+            for (key, value) in env.iter_mut() {
+                if key == "PATH" {
+                    *value = format!("{}:{}", bin_dir, value);
+                    path_found = true;
+                    break;
+                }
+            }
+            if !path_found {
+                env.push(("PATH".to_string(), bin_dir));
+            }
+        }
+
         Ok(zed::Command {
-            command: self.language_server_binary_path(worktree)?,
+            command: sdk.lsp_path,
             args: vec![],
             env,
         })
@@ -400,6 +418,7 @@ impl zed::Extension for MojoExtension {
             envs: vec![
                 ("MODULAR_TELEMETRY_ENABLED".to_string(), "false".to_string()),
                 ("CONDA_PREFIX".to_string(), sdk.env_root.clone()),
+                ("MOJO_SDK_PATH".to_string(), sdk.env_root.clone()),
             ],
             cwd: None,
             connection: None,
