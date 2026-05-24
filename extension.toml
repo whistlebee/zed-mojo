@@ -8,7 +8,7 @@ repository = "https://github.com/whistlebee/zed-mojo"
 
 [grammars.mojo]
 repository = "https://github.com/whistlebee/mojo-tree-sitter"
-rev = "2079fc2360d5a12af2a1689242e32843b5ba6e44"
+rev = "c307dab71a43add26b4715f14e2d6de2a42e6007"
 
 
 [language_servers.mojo-lsp-server]

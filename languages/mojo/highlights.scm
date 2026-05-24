@@ -145,9 +145,10 @@
   (call
     function: (identifier) @attribute))
 
-; String interpolation brackets (f-string {expr})
+; String interpolation brackets (f-string / t-string {expr})
 (interpolation
   "{" @punctuation.special
+  expression: (_) @embedded
   "}" @punctuation.special)
 
 ; Keywords
@@ -223,6 +224,9 @@
 ] @string
 
 (escape_sequence) @string.escape
+
+((string_start) @string.special
+ (#match? @string.special "^[frtbuFRTBU]"))
 
 [
   (integer)
