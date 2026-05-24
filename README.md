@@ -19,6 +19,44 @@ Clone this repository, then open Zed, open the command palette, select `zed: ins
 
 The extension looks for `mojo-lsp-server` in `PATH` and in the project's `.pixi` directory. If the server is not found, an error message will prompt you to install Mojo.
 
+## Configuration
+
+You can configure the Mojo SDK path in your Zed `settings.json`. This is useful when the Mojo SDK is not on your `PATH`, or you want to use a specific SDK installation.
+
+### Setting a custom SDK path
+
+Add the following to your `settings.json` (or project-level `.zed/settings.json`):
+
+```json
+{
+  "lsp": {
+    "mojo-lsp-server": {
+      "settings": {
+        "mojo_sdk_path": "/path/to/mojo/sdk"
+      }
+    }
+  }
+}
+```
+
+When `mojo_sdk_path` is set, all Mojo binaries (`mojo-lsp-server`, `mojo-lldb-dap`, `mojo`, etc.) are resolved relative to this path. If it is not set, the extension falls back to searching your `PATH`.
+
+### Overriding just the LSP binary
+
+If you only need to override the language server binary path:
+
+```json
+{
+  "lsp": {
+    "mojo-lsp-server": {
+      "binary": {
+        "path": "/custom/path/to/mojo-lsp-server"
+      }
+    }
+  }
+}
+```
+
 ## Debugging
 
 To configure debugging for a Mojo project, create a `.zed/debug.json` file in the project root with the following contents:

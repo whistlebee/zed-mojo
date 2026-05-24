@@ -23,30 +23,46 @@
    attribute: (identifier) @constant)
   (#match? @constant "^_*[A-Z][A-Z\\d_]*$"))
 
+; Struct fields (var declarations inside struct body)
+(struct_definition
+  body: (expression_statement
+    (assignment
+      left: (var_pattern
+        pattern: (identifier) @property))))
+
 ; Type definitions
 (struct_definition
   name: (identifier) @type)
 
 (trait_definition
-  name: (identifier) @type.interface)
+  name: (identifier) @type)
 
 (extension_definition
   name: (identifier) @type)
 
-; Generic/Compile-time type parameters (e.g. [T: Type])
+; Generic/Compile-time type parameters (e.g. [T: Type, a_type: DType])
 (meta_parameter
-  name: (identifier) @type)
+  name: (identifier) @variable.parameter)
+
+((meta_parameter
+   name: (identifier) @type)
+  (#match? @type "^[A-Z]"))
+
+; Dunder/magic methods as constructors (e.g. __init__, __del__, __str__)
+((function_definition
+   name: (identifier) @constructor)
+  (#match? @constructor "^__.*__$"))
 
 ; Function definitions
 (function_definition
-  name: (identifier) @function.definition)
+  name: (identifier) @function)
 
 ; Function calls
 (call
   function: [
     (identifier) @function
     (attribute
-      attribute: (identifier) @function.method)
+      attribute: (identifier) @function)
   ])
 
 (call
@@ -54,7 +70,7 @@
     value: [
       (identifier) @function
       (attribute
-        attribute: (identifier) @function.method)
+        attribute: (identifier) @function)
     ]))
 
 ; Constructor/type instantiation calls starting with uppercase letters
@@ -87,6 +103,20 @@
 ((identifier) @constant
   (#match? @constant "^_*[A-Z][A-Z\\d_]*$"))
 
+; Compile-time constant declarations
+(comptime_declaration
+  name: (identifier) @constant)
+
+(comptime_member_declaration
+  name: (identifier) @constant)
+
+; Imports
+(dotted_name
+  (identifier) @type)
+
+(aliased_import
+  alias: (identifier) @type)
+
 ; Brackets
 [
   "("
@@ -114,6 +144,11 @@
 (decorator
   (call
     function: (identifier) @attribute))
+
+; String interpolation brackets (f-string {expr})
+(interpolation
+  "{" @punctuation.special
+  "}" @punctuation.special)
 
 ; Keywords
 [
@@ -154,11 +189,11 @@
   "raise"
   "assert"
   "__comptime_assert"
-] @keyword.control
+] @keyword
 
-(break_statement) @keyword.control
-(continue_statement) @keyword.control
-(pass_statement) @keyword.control
+(break_statement) @keyword
+(continue_statement) @keyword
+(pass_statement) @keyword
 
 ; Word operators
 [
@@ -166,7 +201,20 @@
   "or"
   "not"
   "is"
-] @keyword.operator
+] @keyword
+
+; Docstrings (bare string expressions in function/struct/trait bodies)
+(function_definition
+  body: (expression_statement
+    (string) @comment.doc))
+
+(struct_definition
+  body: (expression_statement
+    (string) @comment.doc))
+
+(trait_definition
+  body: (expression_statement
+    (string) @comment.doc))
 
 ; Literals
 [
@@ -183,10 +231,17 @@
 
 (true) @boolean
 (false) @boolean
-(none) @constant
+(none) @constant.builtin
+
+; Ellipsis literal (...)
+(ellipsis) @constant.builtin
 
 ; Comments
 (comment) @comment
+
+; MLIR inline regions
+(mlir_region_statement
+  "__mlir_region" @embedded)
 
 ; Symbolic operators
 [
@@ -249,6 +304,19 @@
 
 (parameters
   (identifier) @variable.parameter)
+
+; Ensure self/Self is always @variable.special, even inside parameters
+((typed_parameter
+   name: (identifier) @variable.special)
+  (#match? @variable.special "^(self|Self)$"))
+
+((convention_parameter
+   name: (identifier) @variable.special)
+  (#match? @variable.special "^(self|Self)$"))
+
+((parameters
+   (identifier) @variable.special)
+  (#match? @variable.special "^(self|Self)$"))
 
 ; Function modifiers/effects
 (function_modifier

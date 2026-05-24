@@ -1,6 +1,6 @@
 use std::fs;
 
-use zed_extension_api as zed;
+use zed_extension_api::{self as zed, settings::LspSettings};
 
 struct MojoSdk {
     env_root: String,
@@ -13,6 +13,9 @@ struct MojoSdk {
 
 struct MojoExtension {
     cached_sdk: Option<MojoSdk>,
+    /// The SDK path that was used to populate the cache, so we can invalidate
+    /// when the user changes their settings.
+    cached_sdk_path_setting: Option<String>,
 }
 
 impl MojoExtension {
@@ -37,18 +40,69 @@ impl MojoExtension {
         }
     }
 
+    /// Read the user-configured `mojo_sdk_path` from Zed settings, if any.
+    fn configured_sdk_path(worktree: &zed::Worktree) -> Option<String> {
+        let lsp_settings = LspSettings::for_worktree("mojo-lsp-server", worktree).ok()?;
+        let settings = lsp_settings.settings?;
+        settings
+            .get("mojo_sdk_path")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+    }
+
+    /// Read the user-configured LSP binary path override, if any.
+    fn configured_binary_path(worktree: &zed::Worktree) -> Option<String> {
+        let lsp_settings = LspSettings::for_worktree("mojo-lsp-server", worktree).ok()?;
+        lsp_settings.binary.and_then(|b| b.path)
+    }
+
     fn sdk(&mut self, worktree: &zed::Worktree) -> Result<&MojoSdk, String> {
+        let sdk_path_setting = Self::configured_sdk_path(worktree);
+
+        // Invalidate the cache if the configured SDK path has changed.
+        if self.cached_sdk.is_some() && self.cached_sdk_path_setting != sdk_path_setting {
+            self.cached_sdk = None;
+        }
+
         if self.cached_sdk.is_some() {
             return Ok(self.cached_sdk.as_ref().unwrap());
         }
 
-        let lsp_path = worktree
-            .which("mojo-lsp-server")
-            .ok_or_else(|| "Could not find mojo-lsp-server in PATH".to_string())?;
+        // Store the current setting for future cache invalidation checks.
+        self.cached_sdk_path_setting = sdk_path_setting.clone();
+
+        // If the user provided an explicit SDK path, derive all paths from it.
+        if let Some(ref sdk_path) = sdk_path_setting {
+            let bin_ext = Self::binary_extension();
+            let lib_ext = Self::library_extension();
+
+            let lsp_path = Self::configured_binary_path(worktree)
+                .unwrap_or_else(|| format!("{}/bin/mojo-lsp-server{}", sdk_path, bin_ext));
+            let dap_path = format!("{}/bin/mojo-lldb-dap{}", sdk_path, bin_ext);
+            let mojo_path = format!("{}/bin/mojo{}", sdk_path, bin_ext);
+            let lldb_plugin_path = format!("{}/lib/libMojoLLDB.{}", sdk_path, lib_ext);
+            let lldb_visualizers_path = format!("{}/lib/lldb-visualizers", sdk_path);
+
+            self.cached_sdk = Some(MojoSdk {
+                env_root: sdk_path.clone(),
+                lsp_path,
+                dap_path,
+                mojo_path,
+                lldb_plugin_path,
+                lldb_visualizers_path,
+            });
+
+            return Ok(self.cached_sdk.as_ref().unwrap());
+        }
+
+        // Fall back to PATH-based discovery.
+        let lsp_path = Self::configured_binary_path(worktree).or_else(|| {
+            worktree.which("mojo-lsp-server")
+        }).ok_or_else(|| "Could not find mojo-lsp-server in PATH. Set \"mojo_sdk_path\" in your Zed settings under lsp.mojo-lsp-server.settings.".to_string())?;
 
         let dap_path = worktree
             .which("mojo-lldb-dap")
-            .ok_or_else(|| "Could not find mojo-lldb-dap in PATH".to_string())?;
+            .ok_or_else(|| "Could not find mojo-lldb-dap in PATH. Set \"mojo_sdk_path\" in your Zed settings under lsp.mojo-lsp-server.settings.".to_string())?;
 
         // Heuristic to find libMojoLLDB
         // If path is ~/.pixi/bin/mojo, the env might be ~/.pixi/envs/mojo
@@ -303,7 +357,10 @@ impl MojoExtension {
 
 impl zed::Extension for MojoExtension {
     fn new() -> Self {
-        Self { cached_sdk: None }
+        Self {
+            cached_sdk: None,
+            cached_sdk_path_setting: None,
+        }
     }
 
     fn language_server_command(
