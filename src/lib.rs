@@ -216,6 +216,12 @@ impl MojoExtension {
                 "MOJO_SDK_PATH={}",
                 sdk.env_root
             )));
+            if sdk.env_root.contains(".pixi") || sdk.env_root.contains("conda") || sdk.env_root.contains("envs") {
+                full_env.push(zed::serde_json::Value::String(format!(
+                    "MODULAR_HOME={}/share/max",
+                    sdk.env_root
+                )));
+            }
         }
         full_env.extend(env);
 
@@ -363,6 +369,10 @@ impl zed::Extension for MojoExtension {
             env.push(("CONDA_PREFIX".to_string(), sdk.env_root.clone()));
             env.push(("MOJO_SDK_PATH".to_string(), sdk.env_root.clone()));
 
+            if sdk.env_root.contains(".pixi") || sdk.env_root.contains("conda") || sdk.env_root.contains("envs") {
+                env.push(("MODULAR_HOME".to_string(), format!("{}/share/max", sdk.env_root)));
+            }
+
             // Prepend bin_dir to PATH so the LSP server can invoke 'mojo' helper tools
             let mut path_found = false;
             for (key, value) in env.iter_mut() {
@@ -412,14 +422,21 @@ impl zed::Extension for MojoExtension {
                 zed::StartDebuggingRequestArgumentsRequest::Launch
             };
 
+        let mut dap_envs = vec![
+            ("MODULAR_TELEMETRY_ENABLED".to_string(), "false".to_string()),
+        ];
+        if !sdk.env_root.is_empty() {
+            dap_envs.push(("CONDA_PREFIX".to_string(), sdk.env_root.clone()));
+            dap_envs.push(("MOJO_SDK_PATH".to_string(), sdk.env_root.clone()));
+            if sdk.env_root.contains(".pixi") || sdk.env_root.contains("conda") || sdk.env_root.contains("envs") {
+                dap_envs.push(("MODULAR_HOME".to_string(), format!("{}/share/max", sdk.env_root)));
+            }
+        }
+
         Ok(zed::DebugAdapterBinary {
             command: Some(command),
             arguments,
-            envs: vec![
-                ("MODULAR_TELEMETRY_ENABLED".to_string(), "false".to_string()),
-                ("CONDA_PREFIX".to_string(), sdk.env_root.clone()),
-                ("MOJO_SDK_PATH".to_string(), sdk.env_root.clone()),
-            ],
+            envs: dap_envs,
             cwd: None,
             connection: None,
             request_args: zed::StartDebuggingRequestArguments {
