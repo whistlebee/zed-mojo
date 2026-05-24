@@ -7,7 +7,7 @@ description = "Mojo language support for Zed powered by tree-sitter-mojo."
 repository = "https://github.com/whistlebee/zed-mojo"
 
 [grammars.mojo]
-repository = "https://github.com/whistlebee/mojo-tree-sitter"
+repository = "https://github.com/whistlebee/tree-sitter-mojo"
 rev = "c307dab71a43add26b4715f14e2d6de2a42e6007"
 
 
