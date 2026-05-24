@@ -11,21 +11,9 @@ struct MojoSdk {
     lldb_visualizers_path: String,
 }
 
-struct MojoExtension {
-    cached_sdk: Option<MojoSdk>,
-    /// The SDK path that was used to populate the cache, so we can invalidate
-    /// when the user changes their settings.
-    cached_sdk_path_setting: Option<String>,
-}
+struct MojoExtension;
 
 impl MojoExtension {
-    fn binary_extension() -> &'static str {
-        let (os, _) = zed::current_platform();
-        match os {
-            zed::Os::Windows => ".exe",
-            zed::Os::Mac | zed::Os::Linux => "",
-        }
-    }
 
     fn directory_exists(path: &str) -> bool {
         fs::metadata(path).map_or(false, |stat| stat.is_dir())
@@ -35,8 +23,7 @@ impl MojoExtension {
         let (os, _) = zed::current_platform();
         match os {
             zed::Os::Mac => "dylib",
-            zed::Os::Linux => "so",
-            zed::Os::Windows => "dll",
+            zed::Os::Linux | _ => "so",
         }
     }
 
@@ -56,34 +43,21 @@ impl MojoExtension {
         lsp_settings.binary.and_then(|b| b.path)
     }
 
-    fn sdk(&mut self, worktree: &zed::Worktree) -> Result<&MojoSdk, String> {
+    fn sdk(&self, worktree: &zed::Worktree) -> Result<MojoSdk, String> {
         let sdk_path_setting = Self::configured_sdk_path(worktree);
-
-        // Invalidate the cache if the configured SDK path has changed.
-        if self.cached_sdk.is_some() && self.cached_sdk_path_setting != sdk_path_setting {
-            self.cached_sdk = None;
-        }
-
-        if self.cached_sdk.is_some() {
-            return Ok(self.cached_sdk.as_ref().unwrap());
-        }
-
-        // Store the current setting for future cache invalidation checks.
-        self.cached_sdk_path_setting = sdk_path_setting.clone();
 
         // If the user provided an explicit SDK path, derive all paths from it.
         if let Some(ref sdk_path) = sdk_path_setting {
-            let bin_ext = Self::binary_extension();
             let lib_ext = Self::library_extension();
 
             let lsp_path = Self::configured_binary_path(worktree)
-                .unwrap_or_else(|| format!("{}/bin/mojo-lsp-server{}", sdk_path, bin_ext));
-            let dap_path = format!("{}/bin/mojo-lldb-dap{}", sdk_path, bin_ext);
-            let mojo_path = format!("{}/bin/mojo{}", sdk_path, bin_ext);
+                .unwrap_or_else(|| format!("{}/bin/mojo-lsp-server", sdk_path));
+            let dap_path = format!("{}/bin/mojo-lldb-dap", sdk_path);
+            let mojo_path = format!("{}/bin/mojo", sdk_path);
             let lldb_plugin_path = format!("{}/lib/libMojoLLDB.{}", sdk_path, lib_ext);
             let lldb_visualizers_path = format!("{}/lib/lldb-visualizers", sdk_path);
 
-            self.cached_sdk = Some(MojoSdk {
+            return Ok(MojoSdk {
                 env_root: sdk_path.clone(),
                 lsp_path,
                 dap_path,
@@ -91,39 +65,58 @@ impl MojoExtension {
                 lldb_plugin_path,
                 lldb_visualizers_path,
             });
-
-            return Ok(self.cached_sdk.as_ref().unwrap());
         }
 
         // Fall back to PATH-based discovery.
-        let lsp_path = Self::configured_binary_path(worktree).or_else(|| {
-            worktree.which("mojo-lsp-server")
-        }).ok_or_else(|| "Could not find mojo-lsp-server in PATH. Set \"mojo_sdk_path\" in your Zed settings under lsp.mojo-lsp-server.settings.".to_string())?;
-
-        let dap_path = worktree
-            .which("mojo-lldb-dap")
-            .ok_or_else(|| "Could not find mojo-lldb-dap in PATH. Set \"mojo_sdk_path\" in your Zed settings under lsp.mojo-lsp-server.settings.".to_string())?;
-
-        // Heuristic to find libMojoLLDB
-        // If path is ~/.pixi/bin/mojo, the env might be ~/.pixi/envs/mojo
-        // We will try to guess the env_root to construct lib path
         let mut env_root = None;
-        if dap_path.contains("/.pixi/bin/") {
-            let base = dap_path.split("/.pixi/bin/").next().unwrap();
-            env_root = Some(format!("{}/.pixi/envs/mojo", base));
-        } else if dap_path.contains("/.pixi/envs/") {
-            if let Some(pos) = dap_path.find("/bin/") {
-                env_root = Some(dap_path[..pos].to_string());
+
+        // Try local project Pixi environment first.
+        // Since WASI sandbox denies absolute/relative host filesystem access and ignores hidden directories
+        // (like .pixi), we detect if the project is a Pixi project containing Mojo by checking its pixi.toml
+        // or pyproject.toml configuration files.
+        let mut local_env_exists = false;
+        if let Ok(content) = worktree.read_text_file("pixi.toml") {
+            if content.contains("mojo") {
+                local_env_exists = true;
+            }
+        } else if let Ok(content) = worktree.read_text_file("pyproject.toml") {
+            if content.contains("mojo") && content.contains("tool.pixi") {
+                local_env_exists = true;
             }
         }
 
-        let mojo_path = if let Some(root) = &env_root {
-            format!("{}/bin/mojo{}", root, Self::binary_extension())
-        } else {
-            worktree
-                .which("mojo")
-                .ok_or_else(|| "Could not find mojo in PATH".to_string())?
-        };
+        if local_env_exists {
+            env_root = Some(format!("{}/.pixi/envs/default", worktree.root_path()));
+        }
+
+        // Fall back to finding mojo in PATH
+        if env_root.is_none() {
+            if let Some(mojo_path) = worktree.which("mojo") {
+                if let Some(pos) = mojo_path.rfind("/bin/") {
+                    let guessed_root = mojo_path[..pos].to_string();
+                    if guessed_root.ends_with("/.pixi") {
+                        env_root = Some(format!("{}/.pixi/envs/default", guessed_root.split("/.pixi").next().unwrap()));
+                    } else {
+                        env_root = Some(guessed_root);
+                    }
+                }
+            }
+        }
+
+        let lsp_path = Self::configured_binary_path(worktree)
+            .or_else(|| {
+                env_root.as_ref().map(|root| format!("{}/bin/mojo-lsp-server", root))
+            })
+            .or_else(|| worktree.which("mojo-lsp-server"))
+            .ok_or_else(|| "Could not find mojo-lsp-server in PATH. Set \"mojo_sdk_path\" in your Zed settings under lsp.mojo-lsp-server.settings.".to_string())?;
+
+        let dap_path = env_root.as_ref().map(|root| format!("{}/bin/mojo-lldb-dap", root))
+            .or_else(|| worktree.which("mojo-lldb-dap"))
+            .ok_or_else(|| "Could not find mojo-lldb-dap in PATH. Set \"mojo_sdk_path\" in your Zed settings under lsp.mojo-lsp-server.settings.".to_string())?;
+
+        let mojo_path = env_root.as_ref().map(|root| format!("{}/bin/mojo", root))
+            .or_else(|| worktree.which("mojo"))
+            .ok_or_else(|| "Could not find mojo in PATH".to_string())?;
 
         let lldb_plugin_path = if let Some(root) = &env_root {
             format!("{}/lib/libMojoLLDB.{}", root, Self::library_extension())
@@ -137,16 +130,14 @@ impl MojoExtension {
             "".to_string()
         };
 
-        self.cached_sdk = Some(MojoSdk {
+        Ok(MojoSdk {
             env_root: env_root.unwrap_or_default(),
             lsp_path,
             dap_path,
             mojo_path,
             lldb_plugin_path,
             lldb_visualizers_path,
-        });
-
-        Ok(self.cached_sdk.as_ref().unwrap())
+        })
     }
 
     fn lldb_has_python_scripting_support(_sdk: &MojoSdk) -> bool {
@@ -315,7 +306,7 @@ impl MojoExtension {
             ),
         ];
 
-        if Self::lldb_has_python_scripting_support(sdk)
+        if Self::lldb_has_python_scripting_support(&sdk)
             && Self::directory_exists(&sdk.lldb_visualizers_path)
         {
             if let Ok(entries) = fs::read_dir(&sdk.lldb_visualizers_path) {
@@ -357,10 +348,7 @@ impl MojoExtension {
 
 impl zed::Extension for MojoExtension {
     fn new() -> Self {
-        Self {
-            cached_sdk: None,
-            cached_sdk_path_setting: None,
-        }
+        Self
     }
 
     fn language_server_command(
