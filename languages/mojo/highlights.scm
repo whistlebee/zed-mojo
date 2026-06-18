@@ -157,7 +157,6 @@
   "async"
   "comptime"
   "def"
-  "fn"
   "import"
   "from"
   "struct"
@@ -343,3 +342,10 @@
 
 (argument_convention
   (identifier) @label)
+
+; Type annotations / usages (must be defined last to override catch-all/parameter rules)
+(type (identifier) @type)
+(type (subscript value: (identifier) @type))
+(type (attribute attribute: (identifier) @type))
+(type (subscript subscript: (identifier) @type))
+(type (subscript subscript: (attribute attribute: (identifier) @type)))
