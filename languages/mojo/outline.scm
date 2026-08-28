@@ -9,8 +9,5 @@
   name: (identifier) @name) @item
 
 (function_definition
-  keyword: [
-    "def"
-    "fn"
-  ] @context
+  keyword: "def" @context
   name: (identifier) @name) @item
