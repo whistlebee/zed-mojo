@@ -166,9 +166,11 @@
   "ref"
   "where"
   "read"
+  "imm"
   "mut"
   "out"
   "deinit"
+  "lambda"
   "__extension"
 ] @keyword
 
