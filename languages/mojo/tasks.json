@@ -1,5 +1,17 @@
 [
   {
+    "label": "Mojo: Start import worker",
+    "command": "sh",
+    "args": [
+      "-c",
+      "mkdir -p \"$ZED_WORKTREE_ROOT/.zed\" && rm -f \"$ZED_WORKTREE_ROOT/.zed/moff.in\" \"$ZED_WORKTREE_ROOT/.zed/moff.out\" && mkfifo \"$ZED_WORKTREE_ROOT/.zed/moff.in\" \"$ZED_WORKTREE_ROOT/.zed/moff.out\" && trap 'kill \"$worker\" 2>/dev/null; rm -f \"$ZED_WORKTREE_ROOT/.zed/moff.in\" \"$ZED_WORKTREE_ROOT/.zed/moff.out\"' EXIT INT TERM; moff serve --input \"$ZED_WORKTREE_ROOT/.zed/moff.in\" --output \"$ZED_WORKTREE_ROOT/.zed/moff.out\" & worker=$!; wait \"$worker\""
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "never"
+  },
+  {
     "label": "Mojo: Format current file",
     "command": "mojo",
     "args": [
@@ -16,7 +28,11 @@
     "label": "Mojo: Organize imports",
     "command": "moff",
     "args": [
-      "check",
+      "request",
+      "--input",
+      "\"$ZED_WORKTREE_ROOT/.zed/moff.in\"",
+      "--output",
+      "\"$ZED_WORKTREE_ROOT/.zed/moff.out\"",
       "--fix",
       "\"$ZED_FILE\""
     ],

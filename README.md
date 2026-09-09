@@ -114,10 +114,14 @@ To bind the task to a shortcut, add an entry to your Zed `keymap.json`:
 
 ## Organizing imports
 
-Install the native `moff` binary on your shell's `PATH`, then run **Mojo: Organize
-imports** from Zed's task picker. The task saves the current buffer and runs
-`moff check --fix "$ZED_FILE"`. Its terminal remains visible on failure. Import
-organization and `mojo format` are separate tasks; neither runs on save.
+Install the native `moff` binary on your shell's `PATH`. Start **Mojo: Start
+import worker** once per workspace, then run **Mojo: Organize imports** from
+Zed's task picker. The worker keeps the Mojo runtime and organizer loaded; the
+organize task saves the current buffer and sends the path through the workspace's
+`.zed/moff.in` and `.zed/moff.out` FIFOs. Its terminal remains visible on
+failure. Import organization and `mojo format` are separate tasks; neither runs
+on save. If the worker is not running, the organize task reports that directly
+instead of waiting indefinitely.
 
 Override the task in your project's `.zed/tasks.json` to set source roots or
 package classifications:
@@ -127,7 +131,7 @@ package classifications:
   {
     "label": "Mojo: Organize imports",
     "command": "moff",
-    "args": ["check", "--fix", "--src", "src", "--known-first-party", "metallic_max", "--known-third-party", "max", "\"$ZED_FILE\""],
+    "args": ["request", "--input", "\"$ZED_WORKTREE_ROOT/.zed/moff.in\"", "--output", "\"$ZED_WORKTREE_ROOT/.zed/moff.out\"", "--fix", "\"$ZED_FILE\""],
     "cwd": "$ZED_WORKTREE_ROOT",
     "save": "current",
     "allow_concurrent_runs": false,
@@ -136,6 +140,11 @@ package classifications:
   }
 ]
 ```
+
+Pass `--src`, `--known-first-party`, and `--known-third-party` on the
+**Mojo: Start import worker** task when a project needs explicit package
+classification. The one-shot CLI remains available as `moff check --fix PATH`
+for scripts and projects that do not keep a worker task running.
 
 ## Debugging
 
