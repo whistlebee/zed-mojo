@@ -1,0 +1,29 @@
+[
+  {
+    "label": "Mojo: Format current file",
+    "command": "mojo",
+    "args": [
+      "format",
+      "\"$ZED_FILE\""
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "save": "current",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success"
+  },
+  {
+    "label": "Mojo: Organize imports",
+    "command": "moff",
+    "args": [
+      "check",
+      "--fix",
+      "\"$ZED_FILE\""
+    ],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "save": "current",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success"
+  }
+]

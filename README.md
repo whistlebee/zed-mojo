@@ -63,6 +63,80 @@ If you only need to override the language server binary path:
 }
 ```
 
+## Formatting
+
+With a saved Mojo file open, run `task: spawn` and select
+**Mojo: Format current file**. The task saves the current buffer, runs
+`mojo format` on that file, and hides the terminal on success. Errors remain
+visible in the task terminal. Reload/rebuild the dev extension after updating
+it to load the new task.
+
+The task uses `mojo` from your shell's `PATH`. Zed language tasks do not inherit
+the extension's `lsp.mojo-lsp-server.settings.mojo_sdk_path` setting. For a custom
+SDK, add this task to your project's `.zed/tasks.json`, replacing the command
+with the path to your Mojo executable:
+
+```json
+[
+  {
+    "label": "Mojo: Format current file",
+    "command": "\"/path/to/mojo/sdk/bin/mojo\"",
+    "args": ["format", "\"$ZED_FILE\""],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "save": "current",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success"
+  }
+]
+```
+
+For a Pixi environment, use `"command": "pixi"` and
+`"args": ["run", "mojo", "format", "\"$ZED_FILE\""]` instead.
+The Mojo installation must include its formatter; compiler-only Bazel
+toolchains can report `unable to resolve Mojo formatter in PATH`.
+
+To bind the task to a shortcut, add an entry to your Zed `keymap.json`:
+
+```json
+[
+  {
+    "context": "Editor && language == Mojo",
+    "bindings": {
+      "alt-shift-f": [
+        "task::Spawn",
+        { "task_name": "Mojo: Format current file" }
+      ]
+    }
+  }
+]
+```
+
+## Organizing imports
+
+Install the native `moff` binary on your shell's `PATH`, then run **Mojo: Organize
+imports** from Zed's task picker. The task saves the current buffer and runs
+`moff check --fix "$ZED_FILE"`. Its terminal remains visible on failure. Import
+organization and `mojo format` are separate tasks; neither runs on save.
+
+Override the task in your project's `.zed/tasks.json` to set source roots or
+package classifications:
+
+```json
+[
+  {
+    "label": "Mojo: Organize imports",
+    "command": "moff",
+    "args": ["check", "--fix", "--src", "src", "--known-first-party", "metallic_max", "--known-third-party", "max", "\"$ZED_FILE\""],
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "save": "current",
+    "allow_concurrent_runs": false,
+    "reveal": "no_focus",
+    "hide": "on_success"
+  }
+]
+```
+
 ## Debugging
 
 To configure debugging for a Mojo project, create a `.zed/debug.json` file in the project root with the following contents:
