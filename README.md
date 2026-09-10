@@ -29,6 +29,8 @@ The extension looks for `mojo-lsp-server` in `PATH` and in the project's `.pixi`
 
 ## Configuration
 
+Open the project directory as a Zed workspace for project-level LSP settings to apply. A file-only workspace falls back to the server found on `PATH`.
+
 You can configure the Mojo SDK path in your Zed `settings.json`. This is useful when the Mojo SDK is not on your `PATH`, or you want to use a specific SDK installation.
 
 ### Setting a custom SDK path
@@ -64,6 +66,35 @@ If you only need to override the language server binary path:
   }
 }
 ```
+
+The extension forwards `binary.arguments` and `binary.env` as well, so a
+project can pass Mojo module roots with repeated `-I` arguments.
+
+For a Bazel Mojo toolchain, put the compiled SDK modules and any source
+checkout needed for navigation in the arguments. Put the source root before
+the compiled package when you want Go To Definition to open MAX sources:
+
+```json
+{
+  "lsp": {
+    "mojo-lsp-server": {
+      "binary": {
+        "path": "bazel-main/external/rules_mojo++mojo+mojo_toolchain_macos_arm64/bin/mojo-lsp-server",
+        "arguments": [
+          "-I", "/path/to/max/kernels/src",
+          "-I", "/path/to/mojo-sdk/lib/mojo",
+          "-I", "/path/to/project/src"
+        ]
+      }
+    }
+  }
+}
+```
+
+When a binary path is configured, the extension uses that binary's `bin`
+directory and does not export an inherited Pixi or Conda SDK environment over
+it. This keeps a global `pixi global install mojo` shim from changing which
+runtime the Bazel language server loads.
 
 ## Formatting
 
