@@ -2,6 +2,8 @@
 
 A Zed extension for the Mojo programming language.
 
+Licensed under the [MIT License](LICENSE).
+
 ## Features
 
 - **v1.0.0b1 syntax support** - full grammar coverage from `comptime` to ownership keywords and more, powered by [`tree-sitter-mojo`](https://github.com/whistlebee/tree-sitter-mojo)
@@ -71,17 +73,14 @@ With a saved Mojo file open, run `task: spawn` and select
 visible in the task terminal. Reload/rebuild the dev extension after updating
 it to load the new task.
 
-The task uses `mojo` from your shell's `PATH`. Zed language tasks do not inherit
-the extension's `lsp.mojo-lsp-server.settings.mojo_sdk_path` setting. For a custom
-SDK, add this task to your project's `.zed/tasks.json`, replacing the command
-with the path to your Mojo executable:
+The task uses `mojo` from your shell's `PATH`. To use a custom SDK, add an
+explicit override to your project's `.zed/tasks.json`:
 
 ```json
 [
   {
     "label": "Mojo: Format current file",
-    "command": "\"/path/to/mojo/sdk/bin/mojo\"",
-    "args": ["format", "\"$ZED_FILE\""],
+    "command": "\"/path/to/mojo/sdk/bin/mojo\" format \"$ZED_FILE\"",
     "cwd": "$ZED_WORKTREE_ROOT",
     "save": "current",
     "allow_concurrent_runs": false,
@@ -91,8 +90,10 @@ with the path to your Mojo executable:
 ]
 ```
 
-For a Pixi environment, use `"command": "pixi"` and
-`"args": ["run", "mojo", "format", "\"$ZED_FILE\""]` instead.
+You can use `$ZED_WORKTREE_ROOT` for a project-relative SDK path. For Pixi,
+use `pixi run mojo format "$ZED_FILE"` as the command. Task commands are
+configured separately from the LSP's `mojo_sdk_path` and binary settings.
+
 The Mojo installation must include its formatter; compiler-only Bazel
 toolchains can report `unable to resolve Mojo formatter in PATH`.
 
@@ -114,14 +115,11 @@ To bind the task to a shortcut, add an entry to your Zed `keymap.json`:
 
 ## Organizing imports
 
-Install the native `moff` binary on your shell's `PATH`. Start **Mojo: Start
-import worker** once per workspace, then run **Mojo: Organize imports** from
-Zed's task picker. The worker keeps the Mojo runtime and organizer loaded; the
-organize task saves the current buffer and sends the path through the workspace's
-`.zed/moff.in` and `.zed/moff.out` FIFOs. Its terminal remains visible on
-failure. Import organization and `mojo format` are separate tasks; neither runs
-on save. If the worker is not running, the organize task reports that directly
-instead of waiting indefinitely.
+Install the native `moff` binary on your shell's `PATH`, then run **Mojo:
+Organize imports** from Zed's task picker. The task saves the current buffer
+and runs `moff check --fix "$ZED_FILE"`. It works without a background worker.
+Its terminal remains visible on failure. Import organization and `mojo format`
+are separate tasks; neither runs automatically on save.
 
 Override the task in your project's `.zed/tasks.json` to set source roots or
 package classifications:
@@ -130,8 +128,7 @@ package classifications:
 [
   {
     "label": "Mojo: Organize imports",
-    "command": "moff",
-    "args": ["request", "--input", "\"$ZED_WORKTREE_ROOT/.zed/moff.in\"", "--output", "\"$ZED_WORKTREE_ROOT/.zed/moff.out\"", "--fix", "\"$ZED_FILE\""],
+    "command": "moff check --fix --src src --known-first-party metallic_max --known-third-party max \"$ZED_FILE\"",
     "cwd": "$ZED_WORKTREE_ROOT",
     "save": "current",
     "allow_concurrent_runs": false,
@@ -141,10 +138,18 @@ package classifications:
 ]
 ```
 
-Pass `--src`, `--known-first-party`, and `--known-third-party` on the
-**Mojo: Start import worker** task when a project needs explicit package
-classification. The one-shot CLI remains available as `moff check --fix PATH`
-for scripts and projects that do not keep a worker task running.
+For a `moff` build that supports `serve` and `request`, start **Mojo: Start
+import worker** once per workspace, then use **Mojo: Organize imports (worker)**.
+This keeps the runtime loaded and sends paths through `.zed/moff.in` and
+`.zed/moff.out`. Pass source roots and package classifications on the worker's
+`serve` command. Check `moff --help` before using these optional worker tasks;
+older installations support only `check`.
+
+After updating the extension, rebuild/reload the dev extension and select the
+task afresh with `task: spawn`. Rerunning an old terminal task can reuse its old
+command. If the output shows only `/bin/zsh -i -c 'moff'`, the task being run
+is missing its arguments; the default task should show `moff check --fix`
+followed by the current file's path. Check project/global task overrides too.
 
 ## Debugging
 
