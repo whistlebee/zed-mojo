@@ -151,6 +151,8 @@
   expression: (_) @embedded
   "}" @punctuation.special)
 
+(escape_interpolation) @string.escape
+
 ; Keywords
 [
   "as"
