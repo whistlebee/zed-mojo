@@ -6,7 +6,7 @@ Licensed under the [MIT License](LICENSE).
 
 ## Features
 
-- **v1.0.0b1 syntax support** - full grammar coverage from `comptime` to ownership keywords and more, powered by [`tree-sitter-mojo`](https://github.com/whistlebee/tree-sitter-mojo)
+- **Mojo 1.1 support** - powered by [`tree-sitter-mojo`](https://github.com/whistlebee/tree-sitter-mojo)
 - **Debugger support** - launch, set breakpoints, step through via `mojo-lldb` adapter
 - **Proper indents & folding** - code folds smartly, indent guides follow the language structure
 - **Language server integration** - diagnostics, go-to-definition, hover, completions via `mojo-lsp-server`

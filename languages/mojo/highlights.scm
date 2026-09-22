@@ -13,6 +13,9 @@
 (attribute
   attribute: (identifier) @property)
 
+(inferred_member_expression
+  attribute: (identifier) @property)
+
 ; Highlight uppercase attribute names as types/constructors
 ((attribute
    attribute: (identifier) @type)
@@ -63,6 +66,8 @@
     (identifier) @function
     (attribute
       attribute: (identifier) @function)
+    (inferred_member_expression
+      attribute: (identifier) @function)
   ])
 
 (call
@@ -70,6 +75,8 @@
     value: [
       (identifier) @function
       (attribute
+        attribute: (identifier) @function)
+      (inferred_member_expression
         attribute: (identifier) @function)
     ]))
 
