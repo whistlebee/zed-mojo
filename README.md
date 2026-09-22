@@ -11,7 +11,7 @@ Licensed under the [MIT License](LICENSE).
 - **Proper indents & folding** - code folds smartly, indent guides follow the language structure
 - **Language server integration** - diagnostics, go-to-definition, hover, completions via `mojo-lsp-server`
 
-Often provides better syntax highlighting than the official VSCode Mojo extension.
+Handles some Mojo syntax that the official VS Code grammar misses, as illustrated below.
 
 | Zed Mojo | VSCode Mojo |
 | :---: | :---: |
